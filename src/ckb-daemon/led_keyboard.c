@@ -206,10 +206,22 @@ int loadrgb_kb(usbdevice* kb, lighting* light, int mode){
             for(int i = 0; i < 4; i++){
                 if(!usbrecv(kb, data_pkt[i + clr * 4], in_pkt[i]))
                     return -1;
+
+                /*
+                ckb_err("\tdata_pkt[%d], in_pkt[%d]\n\tsent: %#x, %#x, %#x, %#x\n\trcvd: %#x, %#x, %#x, %#x\n",
+                    i + clr * 4, i,
+                    data_pkt[i + clr * 4][0], data_pkt[i + clr * 4][1],
+                    data_pkt[i + clr * 4][2], data_pkt[i + clr * 4][3],
+                    in_pkt[i][0],in_pkt[i][1],in_pkt[i][2],in_pkt[i][3]);
+                */ 
+
                 // Make sure the first four bytes match
-                if(memcmp(in_pkt[i], data_pkt[i + clr * 4], 4)){
-                    ckb_err("Bad input header\n");
-                    return -1;
+                if(memcmp(in_pkt[i], data_pkt[i + clr * 4], 4)) {
+                    // On firmware version 0x205 shift comparison by one byte
+                    if(kb->fwversion < 0x0205 || memcmp(&in_pkt[i][1], data_pkt[i + clr * 4], 3)) {
+                        ckb_err("Bad input header\n");
+                        return -1;
+                    }
                 }
             }
             // Copy colors to lighting. in_pkt[0] is irrelevant.
